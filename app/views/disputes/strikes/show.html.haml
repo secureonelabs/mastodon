@@ -1,0 +1,53 @@
+- content_for :page_title do
+  = t('strikes.view_strike')
+
+%h3= @strike.action
+
+- unless @strike.none_action?
+  %p= t "user_mailer.warning.explanation.#{@strike.action}"
+
+- unless @strike.text.blank?
+  = Formatter.instance.linkify(@strike.text)
+
+- if @strike.report && !@strike.report.other?
+  %p
+    %strong= t('user_mailer.warning.reason')
+    = t("user_mailer.warning.categories.#{@strike.report.category}")
+
+  - if @strike.report.violation? && @strike.report.rule_ids.present?
+    %ul.rules-list
+      - @strike.report.rules.each do |rule|
+        %li= rule.text
+
+- unless @statuses.empty?
+  %p
+    %strong= t('user_mailer.warning.statuses')
+
+  = render partial: 'statuses/detailed_status', collection: @statuses, as: :status
+
+%hr.spacer/
+
+%h3= t('strikes.appeal')
+
+- if @appeal.persisted?
+  .report-notes__item
+    = image_tag @appeal.account.avatar.url, class: 'report-notes__item__avatar'
+
+    .report-notes__item__header
+      %span.username
+        = link_to display_name(@appeal.account), short_account_url(@appeal.account)
+      %time{ datetime: @appeal.created_at.iso8601, title: l(@appeal.created_at) }
+        - if @appeal.created_at.today?
+          = t('admin.report_notes.today_at', time: l(@appeal.created_at, format: :time))
+        - else
+          = l @appeal.created_at.to_date
+
+    .report-notes__item__content
+      = simple_format(h(@appeal.text))
+- elsif can?(:appeal, @strike)
+  = simple_form_for(@appeal, url: settings_strike_appeal_path(@strike)) do |f|
+    .fields-group
+      = f.input :text, wrapper: :with_label, input_html: { maxlength: 500 }
+
+    .actions
+      = f.button :button, t('strikes.submit_appeal'), type: :submit

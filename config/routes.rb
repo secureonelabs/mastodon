@@ -164,6 +164,12 @@ Rails.application.routes.draw do
     resources :login_activities, only: [:index]
   end
 
+  namespace :disputes do
+    resources :strikes, only: [:show] do
+      resource :appeal, only: [:create]
+    end
+  end
+
   resources :media, only: [:show] do
     get :player
   end
